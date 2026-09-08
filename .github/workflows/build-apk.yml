@@ -26,15 +26,17 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Instalar Android SDK
+        run: sdkmanager "platforms;android-36.1"
+
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Preparar build
+        shell: bash
         run: |
           chmod +x ./gradlew
-          if [ ! -f .env ]; then
-            cp .env.example .env
-          fi
+          touch .env
 
       - name: Executar testes
         run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
@@ -50,4 +52,14 @@ jobs:
         with:
           name: Dyno-Lite-v1.2-${{ github.run_number }}
           path: Dyno-Lite-v1.2-debug.apk
+          if-no-files-found: error
           retention-days: 30
+
+      - name: Salvar relatório se os testes falharem
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-de-falha-${{ github.run_number }}
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
