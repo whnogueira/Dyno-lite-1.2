@@ -29,20 +29,19 @@ jobs:
       - name: Instalar Android SDK
         run: sdkmanager "platforms;android-36.1"
 
-      - name: Configurar Gradle
+      - name: Instalar Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
 
       - name: Preparar build
-        shell: bash
-        run: |
-          chmod +x ./gradlew
-          touch .env
+        run: touch .env
 
       - name: Executar testes
-        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
+        run: gradle testDebugUnitTest --stacktrace --no-daemon
 
       - name: Gerar APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: gradle assembleDebug --stacktrace --no-daemon
 
       - name: Renomear APK
         run: cp app/build/outputs/apk/debug/app-debug.apk Dyno-Lite-v1.2-debug.apk
