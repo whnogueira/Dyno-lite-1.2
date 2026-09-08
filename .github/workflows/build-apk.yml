@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Extrair código do Dyno Lite
+        shell: bash
         run: |
           test -f Dyno-lite-v1.2.zip
           mkdir -p codigo
