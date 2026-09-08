@@ -14,8 +14,15 @@ jobs:
     timeout-minutes: 40
 
     steps:
-      - name: Baixar o código
+      - name: Baixar o repositório
         uses: actions/checkout@v4
+
+      - name: Extrair código do Dyno Lite
+        run: |
+          test -f Dyno-lite-v1.2.zip
+          mkdir -p codigo
+          unzip -q Dyno-lite-v1.2.zip -d codigo
+          test -d codigo/dyno-lite-beta2/app
 
       - name: Configurar Java 17
         uses: actions/setup-java@v4
@@ -34,17 +41,19 @@ jobs:
         with:
           gradle-version: "9.3.1"
 
-      - name: Preparar build
-        run: touch .env
+      - name: Preparar arquivos
+        run: touch codigo/dyno-lite-beta2/.env
 
       - name: Executar testes
-        run: gradle testDebugUnitTest --stacktrace --no-daemon
+        run: gradle -p codigo/dyno-lite-beta2 testDebugUnitTest --stacktrace --no-daemon
 
       - name: Gerar APK
-        run: gradle assembleDebug --stacktrace --no-daemon
+        run: gradle -p codigo/dyno-lite-beta2 assembleDebug --stacktrace --no-daemon
 
-      - name: Renomear APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Dyno-Lite-v1.2-debug.apk
+      - name: Preparar APK para download
+        run: |
+          cp codigo/dyno-lite-beta2/app/build/outputs/apk/debug/app-debug.apk \
+          Dyno-Lite-v1.2-debug.apk
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
@@ -53,12 +62,3 @@ jobs:
           path: Dyno-Lite-v1.2-debug.apk
           if-no-files-found: error
           retention-days: 30
-
-      - name: Salvar relatório se os testes falharem
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: relatorio-de-falha-${{ github.run_number }}
-          path: app/build/reports/tests/
-          if-no-files-found: ignore
-          retention-days: 7
