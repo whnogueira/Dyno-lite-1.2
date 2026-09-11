@@ -1,0 +1,63 @@
+name: Build do Dyno Lite 1.2
+
+"on":
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - principal
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Testar e gerar APK 1.2
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v5
+
+      - name: Extrair o projeto corrigido
+        shell: bash
+        run: |
+          test -f Dyno-Lite-1.2-Corrigido.zip
+          mkdir -p codigo
+          unzip -q Dyno-Lite-1.2-Corrigido.zip -d codigo
+
+          test -d codigo/app
+          test -f codigo/settings.gradle.kts
+          test -f codigo/gradlew
+          test -f codigo/gradle/wrapper/gradle-wrapper.jar
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar Android SDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36.1"
+
+      - name: Preparar o projeto
+        shell: bash
+        run: |
+          chmod +x codigo/gradlew
+
+          if [ -f codigo/.env.example ]; then
+            cp codigo/.env.example codigo/.env
+          else
+            touch codigo/.env
+          fi
+
+      - name: Executar testes unitários
+        run: codigo/gradlew -p codigo testDebugUnitTest --stacktrace --no-daemon
